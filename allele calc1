@@ -1,0 +1,84 @@
+#!/bin/bash
+
+#gatkHC VCF preprocessing
+#This script will add the correct allele frequency to 
+
+export PATH=$PATH:/Users/Maksim/bin/bcftools-1.6
+
+for dir in ~/snpEff/snpEff/input/*;
+do
+        (cd "$dir" &&
+                echo "$dir"
+                for f in *.vcf 
+                do
+
+                    #Extract header
+                    bcftools view  -h "$f" > "$f"_header.txt
+
+                    #Extract VCF body and save
+                    bcftools view -H "$f" > "$f"_vcfbody.txt
+                
+                    #Extract VCF Body and Info Column
+                    bcftools view -H "$f" | awk '{print$8}' > "$f"_info.txt
+                    
+                    #Extract AD and DP fields as two columns
+                    bcftools query -f '[%AD{0}\t%DP\t]\n' "$f" > "$f"_VFs.txt
+                    
+                    #Calculate AF from AD and DP fields and store as single column
+                    awk '{printf "%f\n",$1/$2}' "$f"_VFs.txt > "$f"_VFs_calculated.txt
+                    
+                    #Apppend numerical values with "AF=" to match VCF format
+                    sed -e 's/^/VF=/' "$f"_VFs_calculated.txt > "$f"_appended.txt
+                    
+                    #Substitute second column in body txt
+                    awk -F ';' 'FNR==NR{a[NR]=AF=$1;next}{$2=a[FNR]}1' "$f"_appended.txt "$f"_info.txt > "$f"_info2.txt 
+
+                    #Fix delimiter issues in body file
+                    sed 's/ /;/g' "$f"_info2.txt > "$f"_delimited.txt
+
+                    #Substitute fixed AF values within new info column into the body txt of vcf
+                    awk -F '\t' 'FNR==NR{a[NR]=AF=$1;next}{$8=a[FNR]}1' "$f"_delimited.txt "$f"_vcfbody.txt > "$f"_test.txt
+
+                    #Fix deliiter issues in new body file
+                    sed 's/ /	/g' "$f"_test.txt > "$f"_final.txt
+
+                    sed 's/##INFO=<ID=AF/##INFO=<ID=VF/g' "$f"_header.txt > "$f"_header2.txt
+
+                    #Merge new body txt with header
+                    cat "$f"_final.txt >> "$f"_header2.txt
+
+                    gsed -e '##FORMAT=<ID=PL/a ##FORMAT=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">' "$f".vcf > "$f"2.vcf
+
+                    awk '{print$9}' "$f"_vcfbody.txt > format.txt 
+
+                    awk '{print$10}' "$f"_vcfbody.txt > sample.txt 
+
+                    sed -e 's/^/:/' "$f"_VFs_calculated.txt > appended2.txt
+
+                    paste  sample.txt appended2.txt | sed 's/	//g' > sample2.txt
+                    
+                    sed 's/$/:AF/g' format.txt > format_appended.txt 
+
+                    awk -F '\t' 'FNR==NR{a[NR]=AF=$1;next}{$9=a[FNR]}1' format_appended.txt "$f"_vcfbody.txt > body_format.txt
+
+                    awk '{$NF=""; print $0}' body_format.txt > body_format2.txt
+
+                    paste body_format2.txt sample2.txt > body_final.txt
+
+                    sed 's/ //g' body_final.txt > body_final2.txt
+                    
+                    sed 's/ /   /g' body_final2.txt > final.txt
+
+                    cat final.txt >> "$f"_header2.txt
+
+                    mv "$f"_header2.txt "$f".vcf
+
+
+
+
+
+                done;)
+done
+
+
+
