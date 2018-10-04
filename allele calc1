@@ -53,6 +53,8 @@ do
 
                     awk '{print$9}' "$f"_vcfbody.txt > format.txt 
 
+                    #Extract 10th column
+
                     awk '{print$10}' "$f"_vcfbody.txt > sample.txt 
 
                     sed -e 's/^/:/' "$f"_VFs_calculated.txt > appended2.txt
