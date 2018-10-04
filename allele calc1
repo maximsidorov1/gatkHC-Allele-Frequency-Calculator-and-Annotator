@@ -3,7 +3,7 @@
 #gatkHC VCF preprocessing
 #This script will add the correct allele frequency to sample column, and redefine relevant header fields, now termed VF instead of AF for use with merge script
 #bcftools-1.6 needs to be installed on the local or a symlink created for remote server copies and defined in the PATH variable 
-
+#this is a test
 
 export PATH=$PATH:/Users/Maksim/bin/bcftools-1.6
 
