@@ -47,6 +47,8 @@ do
                     #Merge new body txt with header
                     cat "$f"_final.txt >> "$f"_header2.txt
 
+                    #Changing the format field
+
                     gsed -e '##FORMAT=<ID=PL/a ##FORMAT=<ID=AF,Number=A,Type=Float,Description="Allele Frequency, for each ALT allele, in the same order as listed">' "$f".vcf > "$f"2.vcf
 
                     awk '{print$9}' "$f"_vcfbody.txt > format.txt 
